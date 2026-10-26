@@ -5,6 +5,15 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { FileStats, UploadSummary } from "@/lib/ingest/store";
 
+// Vercel rejects request bodies over 4.5 MB, so files are gzipped in the browser first (CSV shrinks ~10x).
+const MAX_BODY_BYTES = 4.4 * 1024 * 1024;
+const TOO_LARGE = "These files are too large to upload together. Upload the dialer and Zoho files one at a time.";
+
+async function gzip(f: File): Promise<File> {
+  const blob = await new Response(f.stream().pipeThrough(new CompressionStream("gzip"))).blob();
+  return new File([blob], f.name, { type: "application/gzip" });
+}
+
 export function UploadForm() {
   const router = useRouter();
   const [dialer, setDialer] = useState<File | null>(null);
@@ -18,11 +27,20 @@ export function UploadForm() {
     setBusy(true);
     setError("");
     setSummary(null);
-    const fd = new FormData();
-    if (dialer) fd.set("dialer", dialer);
-    if (zoho) fd.set("zoho", zoho);
     try {
+      const fd = new FormData();
+      if (dialer) fd.set("dialer", await gzip(dialer));
+      if (zoho) fd.set("zoho", await gzip(zoho));
+      const size = [...fd.values()].reduce((n, f) => n + (f as File).size, 0);
+      if (size > MAX_BODY_BYTES) {
+        setError(TOO_LARGE);
+        return;
+      }
       const res = await fetch("/api/upload", { method: "POST", body: fd });
+      if (res.status === 413) {
+        setError(TOO_LARGE);
+        return;
+      }
       const data = await res.json();
       if (!res.ok) setError(data.error ?? "Upload failed.");
       else {

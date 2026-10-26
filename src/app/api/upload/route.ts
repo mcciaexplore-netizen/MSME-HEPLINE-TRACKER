@@ -1,5 +1,6 @@
 import { Readable } from "node:stream";
 import type { ReadableStream as WebReadableStream } from "node:stream/web";
+import { createGunzip } from "node:zlib";
 import { NextResponse, type NextRequest } from "next/server";
 import { adminFromRequest } from "@/lib/auth";
 import { prisma } from "@/lib/db";
@@ -9,7 +10,11 @@ import { processUpload, type UploadInput } from "@/lib/ingest/store";
 export const runtime = "nodejs";
 export const maxDuration = 300;
 
-const asStream = (f: File) => Readable.fromWeb(f.stream() as unknown as WebReadableStream);
+// The upload form gzips files in the browser to stay under Vercel's 4.5 MB request limit.
+const asStream = (f: File) => {
+  const s = Readable.fromWeb(f.stream() as unknown as WebReadableStream);
+  return f.type === "application/gzip" ? s.pipe(createGunzip()) : s;
+};
 
 export async function POST(req: NextRequest) {
   const admin = await adminFromRequest(req);
