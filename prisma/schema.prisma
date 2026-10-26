@@ -14,6 +14,15 @@ model AdminUser {
   createdAt    DateTime @default(now())
 }
 
+// Failed sign-ins, kept for the rate-limit window only.
+model LoginFailure {
+  id Int      @id @default(autoincrement())
+  ip String
+  at DateTime @default(now())
+
+  @@index([ip, at])
+}
+
 model Coordinator {
   id        Int          @id @default(autoincrement())
   fullName  String       @unique

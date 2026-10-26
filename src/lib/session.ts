@@ -1,4 +1,4 @@
-// Signed session cookie (HMAC-SHA256). Uses Web Crypto so it runs in middleware and route handlers alike.
+// Signed session cookie (HMAC-SHA256). Uses Web Crypto so it runs in the proxy and route handlers alike.
 export const SESSION_COOKIE = "msme_admin";
 const MAX_AGE_SECONDS = 60 * 60 * 12;
 

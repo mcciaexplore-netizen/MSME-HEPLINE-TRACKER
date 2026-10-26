@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { SESSION_COOKIE, isPublicPath, verifySessionToken } from "@/lib/session";
 
-export async function middleware(req: NextRequest) {
+export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
   if (pathname === "/login" && (await verifySessionToken(req.cookies.get(SESSION_COOKIE)?.value))) {
     return NextResponse.redirect(new URL("/dashboard", req.url));
