@@ -17,11 +17,11 @@
     "@prisma/client": "^6.16.2",
     "bcryptjs": "^3.0.2",
     "jaro-winkler": "^0.2.8",
-    "next": "15.5.4",
+    "next": "15.5.28",
     "papaparse": "^5.5.3",
     "prisma": "^6.16.2",
-    "react": "19.1.0",
-    "react-dom": "19.1.0",
+    "react": "19.1.10",
+    "react-dom": "19.1.10",
     "recharts": "^2.15.4"
   },
   "devDependencies": {
@@ -32,7 +32,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "15.5.4",
+    "eslint-config-next": "15.5.28",
     "tailwindcss": "^4",
     "tsx": "^4.20.5",
     "typescript": "^5",
