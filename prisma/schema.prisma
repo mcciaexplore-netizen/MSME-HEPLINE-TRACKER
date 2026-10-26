@@ -1,0 +1,105 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model AdminUser {
+  id           Int      @id @default(autoincrement())
+  username     String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+}
+
+model Coordinator {
+  id        Int          @id @default(autoincrement())
+  fullName  String       @unique
+  lastName  String
+  status    String       @default("Active") // Active | Inactive
+  createdAt DateTime     @default(now())
+  mappings  NameMapping[]
+}
+
+// One row per raw name seen in the files. key = normalised name (lowercase).
+model NameMapping {
+  id            Int          @id @default(autoincrement())
+  source        String       // Dialer | Zoho
+  key           String
+  rawName       String
+  target        String?      // COORDINATOR | IGNORE (null while only suggested and nothing picked)
+  coordinatorId Int?
+  coordinator   Coordinator? @relation(fields: [coordinatorId], references: [id])
+  status        String       @default("Suggested") // Suggested | Confirmed
+  suggestions   String       @default("[]") // JSON [{coordinatorId, fullName, score}]
+  note          String?
+  confirmedBy   String?
+  confirmedAt   DateTime?
+  createdAt     DateTime     @default(now())
+  changes       MappingChange[]
+
+  @@unique([source, key])
+}
+
+model MappingChange {
+  id        Int         @id @default(autoincrement())
+  mappingId Int
+  mapping   NameMapping @relation(fields: [mappingId], references: [id])
+  oldValue  String
+  newValue  String
+  changedBy String
+  changedAt DateTime    @default(now())
+}
+
+model Call {
+  callId      String  @id
+  direction   String  // Outbound | Inbound
+  status      String  // Answered | Missed
+  agentRaw    String  // cleaned display name, "" when blank
+  agentKey    String  // normalised key, "" when blank
+  missedKeys  String  @default("[]") // JSON string[]
+  missedRaw   String  @default("[]") // JSON string[]
+  startTime   String  // YYYY-MM-DD HH:MM:SS (IST)
+  startDate   String  // YYYY-MM-DD
+  convSeconds Int
+  uploadId    Int?
+
+  @@index([startDate])
+}
+
+model Ticket {
+  requestId    String  @id
+  status       String
+  createdTime  String
+  createdDate  String
+  dueTime      String?
+  dueDate      String?
+  modifiedTime String
+  creatorRaw   String
+  creatorKey   String
+  ownerRaw     String
+  ownerKey     String
+  fieldFlags   String  // JSON {fieldName: boolean} filled/not filled; text is never stored
+  uploadId     Int?
+
+  @@index([createdDate])
+  @@index([dueDate])
+}
+
+model UploadLog {
+  id         Int      @id @default(autoincrement())
+  uploadedBy String
+  uploadedAt DateTime @default(now())
+  dialerFile String?
+  zohoFile   String?
+  summary    String   // JSON
+}
+
+model ExportLog {
+  id         Int      @id @default(autoincrement())
+  exportedBy String
+  exportedAt DateTime @default(now())
+  filters    String   // JSON
+}
