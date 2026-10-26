@@ -1,8 +1,8 @@
 // Acceptance check (spec section 12). Usage:
 //   npx tsx scripts/acceptance.ts <dialer.csv> <zoho.csv> [from] [to]
-// Uses its own database (prisma/acceptance.db), never the app database.
+// Wipes and uses the test database (TEST_DATABASE_URL in .env), never the app database.
 import { execSync } from "node:child_process";
-import { createReadStream, rmSync } from "node:fs";
+import { createReadStream } from "node:fs";
 import path from "node:path";
 
 const [dialer, zoho, from = "2026-10-17", to = "2026-10-23"] = process.argv.slice(2);
@@ -11,9 +11,15 @@ if (!dialer || !zoho) {
   process.exit(1);
 }
 
-process.env.DATABASE_URL = "file:./acceptance.db";
-for (const f of ["acceptance.db", "acceptance.db-journal"]) rmSync(path.resolve(__dirname, "../prisma", f), { force: true });
-execSync("npx prisma db push --skip-generate", { env: process.env, stdio: "ignore" });
+try {
+  process.loadEnvFile(path.resolve(__dirname, "../.env"));
+} catch {}
+if (!process.env.TEST_DATABASE_URL) {
+  console.error("Set TEST_DATABASE_URL in .env to a Postgres database this script may wipe.");
+  process.exit(1);
+}
+process.env.DATABASE_URL = process.env.TEST_DATABASE_URL;
+execSync("npx prisma db push --force-reset --skip-generate", { env: process.env, stdio: "ignore" });
 
 async function main() {
   const { PrismaClient } = await import("@prisma/client");

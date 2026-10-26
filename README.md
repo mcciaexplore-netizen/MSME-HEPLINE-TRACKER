@@ -1,17 +1,23 @@
 # MSME Helpline – Coordinator Performance Tracker
 
-Next.js (App Router) + TypeScript, SQLite via Prisma, Tailwind, Recharts, Papa Parse.
+Next.js (App Router) + TypeScript, Postgres (Neon) via Prisma, Tailwind, Recharts, Papa Parse.
 
 ## Setup
 
 ```bash
 npm install
-cp .env.example .env      # set ADMIN_PASSWORD and a long random SESSION_SECRET
-npm run setup             # creates prisma/dev.db and seeds the admin, coordinators and name mappings
+cp .env.example .env      # set DATABASE_URL, TEST_DATABASE_URL, ADMIN_PASSWORD and a long random SESSION_SECRET
+npm run setup             # creates the tables and seeds the admin, coordinators and name mappings
 npm run dev               # http://localhost:3000
 ```
 
 - The app opens on admin sign-in (`/login`); username/password come from `.env` (re-run `npm run seed` after changing the password). Coordinators don't use the app.
+
+## Deploying on Vercel
+
+1. In the Vercel project, open **Storage** and add a **Neon** Postgres database. This sets `DATABASE_URL` (and `DATABASE_URL_UNPOOLED`).
+2. Under **Settings → Environment Variables**, add `ADMIN_USERNAME`, `ADMIN_PASSWORD` and `SESSION_SECRET` (16+ characters).
+3. Redeploy. Each deploy runs `npm run vercel-build`, which creates any missing tables, seeds the admin account (password from `ADMIN_PASSWORD`), coordinators and name mappings, then builds. Seeding never overwrites existing mappings or data.
 
 ## Daily flow
 
@@ -38,8 +44,8 @@ Only the needed columns are stored. Client phone numbers, emails and company nam
 ## Tests and acceptance
 
 ```bash
-npm test                                                     # unit + integration tests (uses prisma/test.db)
+npm test                                                     # unit + integration tests (wipes TEST_DATABASE_URL)
 npx tsx scripts/acceptance.ts <dialer.csv> <zoho.csv> 2026-10-17 2026-10-23
 ```
 
-The acceptance script uses its own database, confirms the seed mappings, uploads both files and prints team and per-coordinator totals.
+The acceptance script wipes and uses TEST_DATABASE_URL, confirms the seed mappings, uploads both files and prints team and per-coordinator totals.
